@@ -1,48 +1,41 @@
 #!/bin/bash
 
+set -e
+
 echo "🔍 Detecting changed services..."
 
-# Get list of changed files between last commit and current
-CHANGED_FILES=$(git diff --name-only HEAD~1)
+CHANGED_FILES=$(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only)
 
-echo "Changed files:"
-echo "$CHANGED_FILES"
-echo "----------------------------"
+SERVICES=("product-service" "inventory-service" "payment-service" "frontend")
 
-# Initialize flags
-PRODUCT_CHANGED=false
-INVENTORY_CHANGED=false
-PAYMENT_CHANGED=false
-FRONTEND_CHANGED=false
+mkdir -p .versions
+> changed-services.txt
 
-# Loop through changed files
-for file in $CHANGED_FILES; do
-  if [[ $file == product-service/* ]]; then
-    PRODUCT_CHANGED=true
-  fi
+for service in "${SERVICES[@]}"; do
+  if echo "$CHANGED_FILES" | grep -q "^$service/"; then
 
-  if [[ $file == inventory-service/* ]]; then
-    INVENTORY_CHANGED=true
-  fi
+    VERSION_FILE=".versions/${service/-service/}.version"
 
-  if [[ $file == payment-service/* ]]; then
-    PAYMENT_CHANGED=true
-  fi
+    # Initialize if missing
+    if [ ! -f "$VERSION_FILE" ]; then
+      echo 1 > "$VERSION_FILE"
+    fi
 
-  if [[ $file == frontend/* ]]; then
-    FRONTEND_CHANGED=true
+    CURRENT_VERSION=$(cat "$VERSION_FILE")
+    NEW_VERSION=$((CURRENT_VERSION + 1))
+
+    echo "$NEW_VERSION" > "$VERSION_FILE"
+
+    IMAGE_NAME="${service/-service/}:v${NEW_VERSION}"
+
+    echo "$service $IMAGE_NAME" >> changed-services.txt
+
+    echo "✅ $service changed → version v${NEW_VERSION}"
+  else
+    echo "ℹ️ $service not changed"
   fi
 done
 
-# Print results
-echo "🔔 Change summary:"
-echo "Product Service changed   : $PRODUCT_CHANGED"
-echo "Inventory Service changed : $INVENTORY_CHANGED"
-echo "Payment Service changed   : $PAYMENT_CHANGED"
-echo "Frontend changed          : $FRONTEND_CHANGED"
-
-# Export for Jenkins
-export PRODUCT_CHANGED
-export INVENTORY_CHANGED
-export PAYMENT_CHANGED
-export FRONTEND_CHANGED
+if [ ! -s changed-services.txt ]; then
+  echo "⚠️ No services changed"
+fi
