@@ -16,8 +16,7 @@ pipeline {
                   chmod +x detect-changes.sh
                   ./detect-changes.sh
                 '''
-            }
-            script {
+                script {
                     if (!fileExists('changed-services.txt') ||
                         readFile('changed-services.txt').trim() == "") {
                         echo "No services changed"
@@ -27,6 +26,8 @@ pipeline {
                         env.NO_CHANGES = "false"
                     }
                 }
+
+            }
         }
     }
 }
