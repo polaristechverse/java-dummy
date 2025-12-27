@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'Dev'
-    }
+    agent any
     stages{
         stage('SCM CHECKOUT'){
             steps{
