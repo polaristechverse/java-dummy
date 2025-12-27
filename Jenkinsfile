@@ -115,9 +115,9 @@ pipeline {
                 echo "♻ Deploying ${serviceName}"
 
                 sh """
-                  docker-compose stop ${serviceName} || true
-                  docker-compose rm -f ${serviceName} || true
-                  docker-compose up -d ${serviceName}
+                  docker compose stop ${serviceName} || true
+                  docker compose rm -f ${serviceName} || true
+                  docker compose up -d ${serviceName}
                 """
             }
         }
