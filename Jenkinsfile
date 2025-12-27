@@ -2,7 +2,6 @@ pipeline {
     agent {
         label 'Dev'
     }
-
     stages{
         stage('SCM CHECKOUT'){
             steps{
@@ -18,17 +17,16 @@ pipeline {
                   ./detect-changes.sh
                 '''
             }
-        }
-        stage('Build Frontend') {
-            when {
-                expression { env.FRONTEND_CHANGED == "true" }
-            }
-            steps {
-                echo "🛠 Building Frontend"
-                dir('frontend') {
-                    sh 'docker build -t $FRONTEND_IMAGE .'
+            script {
+                    if (!fileExists('changed-services.txt') ||
+                        readFile('changed-services.txt').trim() == "") {
+                        echo "No services changed"
+                        currentBuild.result = 'SUCCESS'
+                        env.NO_CHANGES = "true"
+                    } else {
+                        env.NO_CHANGES = "false"
+                    }
                 }
-            }
         }
     }
 }

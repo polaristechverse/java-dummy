@@ -1,1 +1,1 @@
-frontend frontend:v2
+frontend frontend:v1
