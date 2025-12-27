@@ -5,7 +5,7 @@ pipeline {
         booleanParam(
             name: 'FORCE_DEPLOY',
             defaultValue: false,
-            description: 'Force build & deploy even if no service changes detected'
+            description: 'Force deployment even if no service changes detected'
         )
     }
 
@@ -23,6 +23,7 @@ pipeline {
         stage('Detect Changes') {
             steps {
                 echo "Detecting changed services"
+
                 sh '''
                   chmod +x detect-changes.sh
                   ./detect-changes.sh
@@ -49,7 +50,9 @@ pipeline {
         }
         stage('Build Changed Services') {
             when {
-                expression { env.NO_CHANGES != "true" }
+                expression {
+                    env.NO_CHANGES != "true" && !params.FORCE_DEPLOY
+                }
             }
             steps {
                 script {
@@ -71,7 +74,7 @@ pipeline {
                         def serviceDir = parts[0]
                         def imageName  = parts[1]
 
-                        echo "Building ${serviceDir} → ${imageName}"
+                        echo "🛠 Building ${serviceDir} → ${imageName}"
 
                         dir(serviceDir) {
                             if (fileExists('pom.xml')) {
@@ -83,46 +86,52 @@ pipeline {
                 }
             }
         }
-        stage('Deploy Changed Services') {
-    when {
-        expression { env.NO_CHANGES != "true" }
-    }
-    steps {
-        script {
-
-            if (params.FORCE_DEPLOY) {
-                echo "♻ FORCE_DEPLOY enabled → restarting ALL services"
-                sh '''
-                  docker-compose down
-                  docker-compose up -d
-                '''
-                return
+        stage('Deploy') {
+            when {
+                expression { env.NO_CHANGES != "true" }
             }
+            steps {
+                script {
+                    if (params.FORCE_DEPLOY) {
+                        echo "♻ FORCE_DEPLOY: restarting ALL services"
+                        sh '''
+                          docker compose down
+                          docker compose up -d
+                        '''
+                        return
+                    }
+                    def changes = readFile('changed-services.txt').trim()
 
-            def changes = readFile('changed-services.txt').trim()
+                    if (changes == "") {
+                        echo "Nothing to deploy"
+                        return
+                    }
 
-            changes.split('\n').each { line ->
-                def parts = line.trim().split(/\s+/)
+                    changes.split('\n').each { line ->
+                        def parts = line.trim().split(/\s+/)
 
-                if (parts.length < 2) {
-                    echo "⚠️ Skipping invalid deploy entry: '${line}'"
-                    return
+                        if (parts.length < 2) {
+                            echo "Skipping invalid deploy entry: '${line}'"
+                            return
+                        }
+
+                        def serviceDir = parts[0]
+                        def imageName  = parts[1]
+                        def serviceKey = serviceDir
+                                            .replace('-service','')
+                                            .toUpperCase()
+
+                        def serviceName = serviceKey.toLowerCase()
+
+                        echo "Deploying ${serviceName} with image ${imageName}"
+
+                        sh """
+                          sed -i 's|^${serviceKey}_IMAGE=.*|${serviceKey}_IMAGE=${imageName}|' .env
+                          docker compose up -d ${serviceName}
+                        """
+                    }
                 }
-
-                def serviceDir  = parts[0]
-                def serviceName = serviceDir.replace('-service','')
-
-                echo "♻ Deploying ${serviceName}"
-
-                sh """
-                  docker compose stop ${serviceName} || true
-                  docker compose rm -f ${serviceName} || true
-                  docker compose up -d ${serviceName}
-                """
             }
         }
-    }
-}
-
     }
 }
