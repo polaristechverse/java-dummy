@@ -19,5 +19,16 @@ pipeline {
                 '''
             }
         }
+        stage('Build Frontend') {
+            when {
+                expression { env.FRONTEND_CHANGED == "true" }
+            }
+            steps {
+                echo "🛠 Building Frontend"
+                dir('frontend') {
+                    sh 'docker build -t $FRONTEND_IMAGE .'
+                }
+            }
+        }
     }
 }
