@@ -1,5 +1,3 @@
-version: "3.8"
-
 networks:
   ecom-net:
     driver: bridge
@@ -7,41 +5,41 @@ networks:
 services:
 
   frontend:
-    image: frontend:latest
+    image: ${FRONTEND_IMAGE}
     container_name: frontend
     ports:
-      - "80:80"                  # Public
+      - "80:80"
     depends_on:
       - product
       - inventory
       - payment
-    restart: unless-stopped      # 🔁 AUTO RESTART
+    restart: unless-stopped
     networks:
       - ecom-net
 
   product:
-    image: product:latest
+    image: ${PRODUCT_IMAGE}
     container_name: product
     expose:
-      - "8081" 
+      - "8081"
     restart: unless-stopped
     networks:
       - ecom-net
 
   inventory:
-    image: inventory:latest
+    image: ${INVENTORY_IMAGE}
     container_name: inventory
     expose:
       - "8082"
-    restart: unless-stopped      
+    restart: unless-stopped
     networks:
       - ecom-net
 
   payment:
-    image: payment:latest
+    image: ${PAYMENT_IMAGE}
     container_name: payment
     expose:
       - "8083"
-    restart: unless-stopped      
+    restart: unless-stopped
     networks:
       - ecom-net
