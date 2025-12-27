@@ -72,7 +72,7 @@ pipeline {
                         sh """
                           docker stop ${containerName} || true
                           docker rm ${containerName} || true
-                          docker run -d --name ${containerName} ${imageName}
+                          docker run -d --name ${containerName} --network appnet ${imageName}
                         """
                     }
                 }
