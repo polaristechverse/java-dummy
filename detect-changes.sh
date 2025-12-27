@@ -18,7 +18,7 @@ for service in "${SERVICES[@]}"; do
 
     # Initialize if missing
     if [ ! -f "$VERSION_FILE" ]; then
-      echo 1 > "$VERSION_FILE"
+      echo 0 > "$VERSION_FILE"
     fi
 
     CURRENT_VERSION=$(cat "$VERSION_FILE")

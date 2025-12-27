@@ -1,1 +1,2 @@
-frontend frontend:v3
+product-service product:v2
+frontend frontend:v4
