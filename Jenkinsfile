@@ -54,5 +54,31 @@ pipeline {
                 }
             }
         }
+        stage('Deploy Changed Services') {
+            when {
+                expression { env.NO_CHANGES != "true" }
+            }
+            steps {
+                script {
+                    def changes = readFile('changed-services.txt').trim()
+
+                    changes.split('\n').each { line ->
+                        def parts = line.split(' ')
+                        def serviceDir = parts[0]
+                        def imageName  = parts[1]
+
+                        def containerName = serviceDir.replace('-service','')
+
+                        echo "♻ Deploying ${containerName}"
+
+                        sh """
+                          docker stop ${containerName} || true
+                          docker rm ${containerName} || true
+                          docker run -d --name ${containerName} ${imageName}
+                        """
+                    }
+                }
+            }
+        }
     }
 }
