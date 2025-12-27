@@ -29,5 +29,30 @@ pipeline {
 
             }
         }
+        stage('Build Changed Services') {
+            when {
+                expression { env.NO_CHANGES != "true" }
+            }
+            steps {
+                script {
+                    def changes = readFile('changed-services.txt').trim()
+
+                    changes.split('\n').each { line ->
+                        def parts = line.split(' ')
+                        def serviceDir = parts[0]
+                        def imageName  = parts[1]
+
+                        echo "Building ${serviceDir} → ${imageName}"
+
+                        dir(serviceDir) {
+                            if (fileExists('pom.xml')) {
+                                sh 'mvn clean package -DskipTests'
+                            }
+                            sh "docker build -t ${imageName} ."
+                        }
+                    }
+                }
+            }
+        }
     }
 }
