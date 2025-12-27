@@ -126,8 +126,8 @@ pipeline {
                         echo "Deploying ${serviceName} with image ${imageName}"
 
                         sh """
-                          sed -i 's|^${serviceKey}_IMAGE=.*|${serviceKey}_IMAGE=${imageName}|' .env
-                          docker compose up -d ${serviceName}
+				 sed -i 's|^${serviceKey}_IMAGE=.*|${serviceKey}_IMAGE=${imageName}|' .env
+                  		docker compose up -d --no-deps --force-recreate ${serviceName}
                         """
                     }
                 }
