@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🔍 Detecting changed services..."
+echo "Detecting changed services..."
 
 CURRENT_COMMIT=$(git rev-parse HEAD)
 CHANGED_FILES=$(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only)
